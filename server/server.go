@@ -43,9 +43,7 @@ func (s *Server) Listen() {
 
 	if s.Config.Debug {
 		test.RegisterTest(e, s.Config.DebugLazy)
-	}
 
-	if s.Config.Debug {
 		err := godotenv.Load()
 
 		if err != nil {

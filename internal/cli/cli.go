@@ -9,16 +9,16 @@ import (
 
 func PrintHelp() {
 	fmt.Println("")
-	fmt.Println("GoChat Server Commands")
+	fmt.Println("GoTalk Server Commands")
 	fmt.Println("")
-	fmt.Println("-> run                        :   Run GoChat server")
+	fmt.Println("-> run                        :   Run GoTalk server")
 	fmt.Println("-> --help , -h, help          :   Print available commands")
-	fmt.Println("-> -v , --version, version    :   Getting current version of GoChat")
+	fmt.Println("-> -v , --version, version    :   Getting current version of GoTalk")
 	fmt.Println("-------------------------------------------------------------------")
 	fmt.Println("Flags")
 	fmt.Println("-b [ip]                       :    Bind server to given ip address")
 	fmt.Println("-p [port]                     :    set port")
-	fmt.Println("-d options(\"\", \"lazy\")    :    enable debug mode")
+	fmt.Println("-d options(\"\", \"lazy\")        :    enable debug mode")
 	fmt.Println("-------------------------------------------------------------------")
 	fmt.Println("")
 }
