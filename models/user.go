@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -25,7 +24,7 @@ type UserDetails struct {
 	ID       primitive.ObjectID   `json:"_id" bson:"_id,omitempity"`
 	UserID   string               `json:"user_id" bson:"user_id,omitempity"`
 	Status   UserStatus           `json:"status" bson:"status,omitempity"`
-	LastSeen time.Time            `json:"lastseen" bson:"lastseen,omitempity"`
+	LastSeen primitive.Timestamp  `json:"lastseen" bson:"lastseen,omitempity"`
 	Contacts []primitive.ObjectID `json:"contacts" bson:"contacts"`
 	Channels []primitive.ObjectID `json:"channels" bson:"channels"`
 }

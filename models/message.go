@@ -10,8 +10,11 @@ const (
 )
 
 type Message struct {
-	Channel primitive.ObjectID `json:"channel" bson:"channel,omitempity"`
-	From    primitive.ObjectID `json:"from" bson:"from,omitempity"`
-	Payload string             `json:"payload" bson:"payload,omitempity"`
-	Type    MessageType        `json:"type" bson:"type,omitempity"`
+	Type       MessageType          `json:"type" bson:"type,omitempity"`
+	From       primitive.ObjectID   `json:"from" bson:"from,omitempity"`
+	Channel    primitive.ObjectID   `json:"channel" bson:"channel,omitempity"`
+	Timestamp  primitive.Timestamp  `json:"timestamp" bson:"timestamp,omitempity"`
+	Payload    interface{}          `json:"payload" bson:"payload,omitempity"`
+	ReceivedBy []primitive.ObjectID `json:"delivered" bson:"delivered"`
+	SeenBy     []primitive.ObjectID `json:"seen_by" bson:"seen_by"`
 }
