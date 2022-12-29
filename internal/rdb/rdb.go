@@ -59,19 +59,12 @@ func GetInstance(conf *config.ConfigAtrs) *RedisClient {
 					log.Fatal(err)
 				}
 			}
-
-			var (
-				Addr          = os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT")
-				RedisUser     = os.Getenv("REDIS_USER")
-				RedisPassword = os.Getenv("REDIS_PASSWORD")
-			)
+			options, err := redis.ParseURL(os.Getenv("REDIS_URL"))
+			if err != nil {
+				log.Fatal(err)
+			}
 			singleInstance = &RedisClient{
-				Client: redis.NewClient(&redis.Options{
-					Addr:     Addr,
-					Username: RedisUser,
-					Password: RedisPassword,
-					DB:       0,
-				}),
+				Client: redis.NewClient(options),
 			}
 		}
 	}

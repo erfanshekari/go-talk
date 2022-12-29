@@ -7,5 +7,5 @@ import (
 
 type Context struct {
 	echo.Context
-	User *models.User `json:"user"`
+	User *models.User
 }
