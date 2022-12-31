@@ -11,6 +11,10 @@ type User struct {
 	Details *UserDetails
 }
 
+func (u *User) getDetails(ctx *context.Context) {
+
+}
+
 type UserStatus string
 
 const (

@@ -21,14 +21,14 @@ func main() {
 	// init and health check Redis
 	ok, err := rdb.GetInstance(conf).Ping()
 	if err != nil || !ok {
-		log.Fatal(err, "On Redis Client Ping Method")
+		log.Fatal(err, "On Redis Client Ping!")
 	}
 	defer rdb.GetInstance(nil).Close()
 
 	// init and health check MongoDB
 	ok, err = mdbc.GetInstance(conf).Ping()
 	if err != nil || !ok {
-		log.Fatal(err, "On MongoDB Client Ping Method")
+		log.Fatal(err, "On MongoDB Client Ping!")
 	}
 	defer mdbc.GetInstance(nil).Close()
 

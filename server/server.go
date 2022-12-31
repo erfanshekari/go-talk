@@ -72,6 +72,8 @@ func (s *Server) Listen() {
 		}
 	})
 
+	e.Validator = GetValidator()
+
 	s.registerRoutes(e)
 
 	addr := s.Config.IP + ":" + strconv.FormatInt(int64(s.Config.Port), 10)

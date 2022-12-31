@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/erfanshekari/go-talk/api/message"
+	"github.com/erfanshekari/go-talk/api/routes/message"
 	"github.com/labstack/echo/v4"
 )
 
