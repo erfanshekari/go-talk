@@ -90,7 +90,6 @@ func (u *User) GetDetails(c *ctx.Context) *UserDetails {
 			Key:   "user_id",
 			Value: u.UserID,
 		}})
-		u.newUser(u.UserID, c)
 		if err := result.Err(); err != nil {
 			// insert user to db
 			if err == mongo.ErrNoDocuments {
