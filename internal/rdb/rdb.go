@@ -51,7 +51,7 @@ func GetInstance(conf *config.ConfigAtrs) *RedisClient {
 		lock.Lock()
 		defer lock.Unlock()
 		if singleInstance == nil {
-			log.Println("Creating Redis Client...")
+			log.Println("**  Creating Redis Client...")
 
 			if conf != nil && conf.Debug {
 				err := godotenv.Load()

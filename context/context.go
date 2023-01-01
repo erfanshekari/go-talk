@@ -1,11 +1,11 @@
 package context
 
 import (
-	"github.com/erfanshekari/go-talk/models"
+	"github.com/erfanshekari/go-talk/config"
 	"github.com/labstack/echo/v4"
 )
 
 type Context struct {
 	echo.Context
-	User *models.User
+	ServerConfig *config.ConfigAtrs
 }

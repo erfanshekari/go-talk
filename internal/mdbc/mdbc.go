@@ -50,7 +50,7 @@ func GetInstance(conf *config.ConfigAtrs) *MongoClient {
 		lock.Lock()
 		defer lock.Unlock()
 		if singleInstance == nil {
-			log.Println("Creating MongoDB Client...")
+			log.Println("** Creating MongoDB Client...")
 
 			if conf != nil && conf.Debug {
 				err := godotenv.Load()

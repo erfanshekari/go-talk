@@ -29,19 +29,25 @@ func (s *Server) registerRoutes(e *echo.Echo) {
 
 func (s *Server) Listen() {
 
-	e := echo.New()
+	e := echo.New() // init server
 
+	// Change Default Context
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			cc := &ctx.Context{Context: c, User: nil}
+			cc := &ctx.Context{
+				Context:      c,
+				ServerConfig: s.Config,
+			}
 			return next(cc)
 		}
 	})
 
+	// register echo logger and recover middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	if s.Config.Debug {
+		// performing build tests if necessary.
 		test.RegisterTest(e, s.Config.DebugLazy)
 
 		err := godotenv.Load()
@@ -51,31 +57,38 @@ func (s *Server) Listen() {
 		}
 	}
 
-	secretKey := os.Getenv("SECRET_KEY")
+	// Adding Throttle Middleware
+	e.Use(middleware.RateLimiterWithConfig(ThrottleConfig))
 
+	// Adding jwt auth middleware
+	secretKey := os.Getenv("SECRET_KEY")
 	e.Use(echojwt.WithConfig(echojwt.Config{
 		SigningKey: []byte(secretKey),
 		ContextKey: "user",
 	}))
 
+	// Register user to context
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			cc := c.(*ctx.Context)
 			token := cc.Get("user").(*jwt.Token)
 			claims := token.Claims.(jwt.MapClaims)
-			cc.User = &models.User{
+			cc.Set("user", &models.User{
 				UserID: strconv.FormatInt(
 					int64(int((claims["user_id"]).(float64))),
 					10,
-				)}
+				)})
 			return next(cc)
 		}
 	})
 
+	// adding validator
 	e.Validator = GetValidator()
 
+	// registering all Rest API routes
 	s.registerRoutes(e)
 
+	// starting server
 	addr := s.Config.IP + ":" + strconv.FormatInt(int64(s.Config.Port), 10)
 	e.Start(addr)
 }
