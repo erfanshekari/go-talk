@@ -12,6 +12,6 @@ type Model interface {
 	Migrate()
 }
 
-func Migrate(c context.Context, conf *config.ConfigAtrs) {
+func Migrate(c context.Context, conf *config.Config) {
 	MigrateUser(c, conf)
 }

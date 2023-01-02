@@ -18,7 +18,7 @@ import (
 )
 
 type Server struct {
-	Config *config.ConfigAtrs
+	Config *config.Config
 }
 
 func (s *Server) registerRoutes(e *echo.Echo) {
@@ -46,9 +46,9 @@ func (s *Server) Listen() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	if s.Config.Debug {
+	if s.Config.Server.Debug {
 		// performing build tests if necessary.
-		test.RegisterTest(e, s.Config.DebugLazy)
+		test.RegisterTest(e, s.Config.Server.LazyDebug)
 
 		err := godotenv.Load()
 
@@ -89,6 +89,6 @@ func (s *Server) Listen() {
 	s.registerRoutes(e)
 
 	// starting server
-	addr := s.Config.IP + ":" + strconv.FormatInt(int64(s.Config.Port), 10)
+	addr := s.Config.Server.Host + ":" + strconv.FormatInt(int64(s.Config.Server.Port), 10)
 	e.Start(addr)
 }

@@ -1,24 +1,39 @@
 package config
 
-import "time"
+import (
+	"log"
+	"os"
+	"time"
 
-type ConfigAtrs struct {
-	IP                                                string
-	Port                                              int32
-	Debug                                             bool
-	DebugLazy                                         bool
-	DatabaseName                                      string
-	WebSocketHandshakeTimeout                         time.Duration
-	WebSocketReadBufferSize, WebSocketWriteBufferSize int
+	"gopkg.in/yaml.v3"
+)
+
+type Config struct {
+	Server struct {
+		Host      string `yaml:"host"`
+		Port      int    `yaml:"port"`
+		Debug     bool   `yaml:"debug"`
+		LazyDebug bool   `yaml:"lazy-debug"`
+		WebSocket struct {
+			HandshakeTimeout time.Duration `yaml:"handshake-timeout"`
+			ReadBufferSize   int           `yaml:"read-buffer-size"`
+			WriteBufferSize  int           `yaml:"write-buffer-size"`
+		} `yaml:"websocket"`
+	} `yaml:"server"`
+	Database struct {
+		Name string `yaml:"name"`
+	} `yaml:"database"`
 }
 
-var Config = ConfigAtrs{
-	IP:                        "0.0.0.0",
-	Port:                      8080,
-	Debug:                     false,
-	DebugLazy:                 false,
-	DatabaseName:              "go-talk",
-	WebSocketHandshakeTimeout: time.Second * 3,
-	WebSocketReadBufferSize:   1024,
-	WebSocketWriteBufferSize:  1024,
+func GetDefaultConfig() *Config {
+	f, err := os.ReadFile("config.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	var conf Config
+	err = yaml.Unmarshal(f, &conf)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &conf
 }

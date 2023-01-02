@@ -37,8 +37,8 @@ func main() {
 
 	case cli.Migrate:
 		log.Println("Migrating Models...")
-		conf.Debug = true
-		conf.DebugLazy = true
+		conf.Server.Debug = true
+		conf.Server.LazyDebug = true
 		initMongoDB(conf)
 		defer mdbc.GetInstance(nil).Close()
 		models.Migrate(context.Background(), conf)
@@ -52,7 +52,7 @@ func main() {
 
 }
 
-func initRedis(conf *config.ConfigAtrs) {
+func initRedis(conf *config.Config) {
 	// init and health check Redis
 	ok, err := rdb.GetInstance(conf).Ping()
 	if err != nil || !ok {
@@ -60,7 +60,7 @@ func initRedis(conf *config.ConfigAtrs) {
 	}
 }
 
-func initMongoDB(conf *config.ConfigAtrs) {
+func initMongoDB(conf *config.Config) {
 	// init and health check MongoDB
 	ok, err := mdbc.GetInstance(conf).Ping()
 	if err != nil || !ok {
@@ -68,7 +68,7 @@ func initMongoDB(conf *config.ConfigAtrs) {
 	}
 }
 
-func initWebSocketUpgrader(conf *config.ConfigAtrs) {
+func initWebSocketUpgrader(conf *config.Config) {
 	// init gorilla websocket upgrader
 	upgrader.GetInstance(conf)
 }

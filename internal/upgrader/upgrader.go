@@ -16,17 +16,17 @@ type Upgrader struct {
 
 var singleInstance *Upgrader
 
-func GetInstance(conf *config.ConfigAtrs) *Upgrader {
+func GetInstance(conf *config.Config) *Upgrader {
 	if singleInstance == nil {
 		lock.Lock()
 		defer lock.Unlock()
 		if singleInstance == nil {
-			log.Println("**  Initializing Gorilla Websocket Upgrader...")
+			log.Println("**  Initializing gorilla Websocket Upgrader...")
 			singleInstance = &Upgrader{
 				Upgrader: &websocket.Upgrader{
-					HandshakeTimeout: conf.WebSocketHandshakeTimeout,
-					ReadBufferSize:   conf.WebSocketReadBufferSize,
-					WriteBufferSize:  conf.WebSocketWriteBufferSize,
+					HandshakeTimeout: conf.Server.WebSocket.HandshakeTimeout,
+					ReadBufferSize:   conf.Server.WebSocket.ReadBufferSize,
+					WriteBufferSize:  conf.Server.WebSocket.WriteBufferSize,
 				},
 			}
 		}

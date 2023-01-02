@@ -45,14 +45,14 @@ func (m *MongoClient) Close() {
 
 var singleInstance *MongoClient
 
-func GetInstance(conf *config.ConfigAtrs) *MongoClient {
+func GetInstance(conf *config.Config) *MongoClient {
 	if singleInstance == nil {
 		lock.Lock()
 		defer lock.Unlock()
 		if singleInstance == nil {
 			log.Println("** Creating MongoDB Client...")
 
-			if conf != nil && conf.Debug {
+			if conf != nil && conf.Server.Debug {
 				err := godotenv.Load()
 				if err != nil {
 					log.Fatal(err)

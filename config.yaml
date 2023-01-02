@@ -1,0 +1,13 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  debug: true
+  lazy-debug: false
+  websocket:
+    handshake-timeout: 3s
+    read-buffer-size: 1024
+    write-buffer-size: 1024
+
+database:
+  name: "go-talk"
+

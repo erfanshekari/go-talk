@@ -7,5 +7,5 @@ import (
 
 type Context struct {
 	echo.Context
-	ServerConfig *config.ConfigAtrs
+	ServerConfig *config.Config
 }

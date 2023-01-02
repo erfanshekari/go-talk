@@ -46,14 +46,14 @@ func (r *RedisClient) Ping() (bool, error) {
 
 var singleInstance *RedisClient
 
-func GetInstance(conf *config.ConfigAtrs) *RedisClient {
+func GetInstance(conf *config.Config) *RedisClient {
 	if singleInstance == nil {
 		lock.Lock()
 		defer lock.Unlock()
 		if singleInstance == nil {
 			log.Println("**  Creating Redis Client...")
 
-			if conf != nil && conf.Debug {
+			if conf != nil && conf.Server.Debug {
 				err := godotenv.Load()
 				if err != nil {
 					log.Fatal(err)

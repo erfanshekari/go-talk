@@ -39,8 +39,8 @@ type User struct {
 	Details *UserDetails
 }
 
-func MigrateUser(c context.Context, conf *config.ConfigAtrs) {
-	db := mdbc.GetInstance(nil).Client.Database(conf.DatabaseName)
+func MigrateUser(c context.Context, conf *config.Config) {
+	db := mdbc.GetInstance(nil).Client.Database(conf.Database.Name)
 	err := db.CreateCollection(c, modelName)
 	if err != nil {
 		log.Println(err)
