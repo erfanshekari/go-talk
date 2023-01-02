@@ -15,7 +15,7 @@ import (
 )
 
 // Init Model Name
-var modelName string = "user"
+const modelName string = "user"
 
 type UserStatus string
 
@@ -39,7 +39,7 @@ type User struct {
 	Details *UserDetails
 }
 
-func (u *User) Migrate(c context.Context, conf *config.ConfigAtrs) {
+func MigrateUser(c context.Context, conf *config.ConfigAtrs) {
 	db := mdbc.GetInstance(nil).Client.Database(conf.DatabaseName)
 	err := db.CreateCollection(c, modelName)
 	if err != nil {
@@ -75,6 +75,7 @@ func (u *User) newUser(userID string, c *ctx.Context) (*UserDetails, error) {
 		Contacts: []primitive.ObjectID{},
 		Channels: []primitive.ObjectID{},
 	}
+	log.Println(details.LastSeen, details.LastSeen.T, details.LastSeen.I)
 	_, err := coll.InsertOne(c.Request().Context(), details)
 	if err != nil {
 		log.Println(err.Error())

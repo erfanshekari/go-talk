@@ -3,7 +3,7 @@ package message
 import (
 	"log"
 
-	"github.com/erfanshekari/go-talk/api/types"
+	"github.com/erfanshekari/go-talk/api/rest/types"
 	"github.com/erfanshekari/go-talk/context"
 	"github.com/erfanshekari/go-talk/models"
 	"github.com/labstack/echo/v4"

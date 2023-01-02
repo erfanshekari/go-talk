@@ -9,6 +9,7 @@ import (
 	"github.com/erfanshekari/go-talk/internal/cli"
 	"github.com/erfanshekari/go-talk/internal/mdbc"
 	"github.com/erfanshekari/go-talk/internal/rdb"
+	"github.com/erfanshekari/go-talk/internal/upgrader"
 	"github.com/erfanshekari/go-talk/models"
 	"github.com/erfanshekari/go-talk/server"
 )
@@ -22,15 +23,18 @@ func main() {
 	command, conf := cli.HandleCommand(os.Args)
 
 	switch command {
+
 	case cli.RunServer:
 		initRedis(conf)
 		defer rdb.GetInstance(nil).Close()
 		initMongoDB(conf)
 		defer mdbc.GetInstance(nil).Close()
+		initWebSocketUpgrader(conf)
 		server := server.Server{
 			Config: conf,
 		}
 		server.Listen()
+
 	case cli.Migrate:
 		log.Println("Migrating Models...")
 		conf.Debug = true
@@ -38,8 +42,10 @@ func main() {
 		initMongoDB(conf)
 		defer mdbc.GetInstance(nil).Close()
 		models.Migrate(context.Background(), conf)
+
 	case cli.Help:
 		cli.PrintHelp()
+
 	case cli.Version:
 		cli.PrintVersion(version)
 	}
@@ -60,4 +66,9 @@ func initMongoDB(conf *config.ConfigAtrs) {
 	if err != nil || !ok {
 		log.Fatal(err, "On MongoDB Client Ping!")
 	}
+}
+
+func initWebSocketUpgrader(conf *config.ConfigAtrs) {
+	// init gorilla websocket upgrader
+	upgrader.GetInstance(conf)
 }

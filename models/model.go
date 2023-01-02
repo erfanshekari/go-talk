@@ -13,8 +13,5 @@ type Model interface {
 }
 
 func Migrate(c context.Context, conf *config.ConfigAtrs) {
-	var (
-		user User
-	)
-	user.Migrate(c, conf)
+	MigrateUser(c, conf)
 }

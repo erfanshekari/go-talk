@@ -3,6 +3,7 @@ Implemented in Go
 ~~~
 GoTalk Server
 /////////////.......................................................................................
+GoTalk Server
 Commands:
 =====> run                                       : Run GoTalk server
          *Options:
@@ -14,12 +15,16 @@ Commands:
                    1.leave empity will build tests
                    2."l"=(lazy debug run) mean's only run server without building tests
                    3."lazy"=equal to option (1)
+           -ws                                   : Customize websocket configuration
+               *Options:
+                   h=3                           : Specify the duration of the WebSocket handshake in seconds
+                   rb=1024                       : Specify read buffer size in bytes
+                   wb=1024                       : Specify write buffer size in bytes
 =====> migrate                                   : Migrate all models to database
          *Options:
            -db [database-name]                   : Specify database name, default=go-talk
 =====> --help , -h, help                         : Print available commands
 =====> -v , --version, version                   : Getting current version of GoTalk
-////////////////////////////////////////////////////////////////////////////////////////////////////
 ~~~
 
 # Test

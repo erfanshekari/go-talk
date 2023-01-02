@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/erfanshekari/go-talk/config"
 )
@@ -19,7 +21,6 @@ const (
 
 func PrintHelp() {
 	fmt.Println("GoTalk Server")
-	fmt.Println("/////////////.......................................................................................")
 	fmt.Println("Commands:")
 	fmt.Println("=====> run                                       : Run GoTalk server")
 	fmt.Println("         *Options:")
@@ -31,29 +32,82 @@ func PrintHelp() {
 	fmt.Println("                   1.leave empity will build tests")
 	fmt.Println("                   2.\"l\"=(lazy debug run) mean's only run server without building tests")
 	fmt.Println("                   3.\"lazy\"=equal to option (1)")
+	fmt.Println("           -ws                                   : Customize websocket configuration")
+	fmt.Println("               *Options:")
+	fmt.Println("                   h=3                           : Specify the duration of the WebSocket handshake in seconds")
+	fmt.Println("                   rb=1024                       : Specify read buffer size in bytes")
+	fmt.Println("                   wb=1024                       : Specify write buffer size in bytes")
 	fmt.Println("=====> migrate                                   : Migrate all models to database")
 	fmt.Println("         *Options:")
 	fmt.Println("           -db [database-name]                   : Specify database name, default=go-talk")
 	fmt.Println("=====> --help , -h, help                         : Print available commands")
 	fmt.Println("=====> -v , --version, version                   : Getting current version of GoTalk")
-	fmt.Println("////////////////////////////////////////////////////////////////////////////////////////////////////")
 }
 
 func PrintVersion(v string) {
 	fmt.Println("Gotalk Server Version", v)
 }
 
-func ExportConfig(args []string) (*config.ConfigAtrs, error) {
+type webSocketConfig struct {
+	HandshakeTimeout                *time.Duration
+	ReadBufferSize, WriteBufferSize *int
+}
+
+func parseInt(val string) (int64, bool) {
+	value, err := strconv.ParseInt(val, 10, 32)
+	if err != nil {
+		return 0, false
+	} else {
+		return value, true
+	}
+}
+
+func exportWebSocketConfig(args []string) webSocketConfig {
+	conf := webSocketConfig{}
+	for _, val := range args {
+		split := strings.Split(val, "=")
+		if len(split) == 2 {
+			switch split[0] {
+			case "h":
+				val, ok := parseInt(split[1])
+				if !ok {
+					continue
+				}
+				duration := time.Duration(val) * time.Second
+				conf.HandshakeTimeout = &duration
+			case "rb":
+				val, ok := parseInt(split[1])
+				if !ok {
+					continue
+				}
+				rb := int(val)
+				conf.ReadBufferSize = &rb
+			case "wb":
+				val, ok := parseInt(split[1])
+				if !ok {
+					continue
+				}
+				wb := int(val)
+				conf.WriteBufferSize = &wb
+			}
+		}
+	}
+	return conf
+}
+
+func exportConfig(args []string) (*config.ConfigAtrs, error) {
 	var ip string
 	var port int32
 	var debug bool
 	var debugLazy bool
 	var databaseName string
+	var webSocketConf webSocketConfig
+	lenOfArgs := len(args)
 	for index, value := range args {
 		switch value {
 		case "-p":
 			target := index + 1
-			if (target + 1) <= len(args) {
+			if (target + 1) <= lenOfArgs {
 				target, err := strconv.ParseInt(args[target], 10, 32)
 				if err != nil {
 					return nil, err
@@ -63,13 +117,13 @@ func ExportConfig(args []string) (*config.ConfigAtrs, error) {
 			}
 		case "-b":
 			target := index + 1
-			if (target + 1) <= len(args) {
+			if (target + 1) <= lenOfArgs {
 				ip = args[index+1]
 			}
 		case "-d":
 			debug = true
 			target := index + 1
-			if (target + 1) <= len(args) {
+			if (target + 1) <= lenOfArgs {
 				value = args[index+1]
 				if value == "lazy" || value == "L" || value == "l" {
 					debugLazy = true
@@ -77,12 +131,21 @@ func ExportConfig(args []string) (*config.ConfigAtrs, error) {
 			}
 		case "-db":
 			target := index + 1
-			if (target + 1) <= len(args) {
+			if (target + 1) <= lenOfArgs {
 				value = args[index+1]
 				if value != "" {
 					databaseName = value
 				}
 			}
+		case "-ws":
+			target := index + 1
+			var possibleTargets []string
+			for i := target; i < (target + 3); i++ {
+				if (i + 1) <= lenOfArgs {
+					possibleTargets = append(possibleTargets, args[i])
+				}
+			}
+			webSocketConf = exportWebSocketConfig(possibleTargets)
 		}
 	}
 	conf := config.ConfigAtrs{
@@ -101,6 +164,17 @@ func ExportConfig(args []string) (*config.ConfigAtrs, error) {
 	if databaseName != "" {
 		conf.DatabaseName = databaseName
 	}
+
+	if webSocketConf.HandshakeTimeout != nil {
+		conf.WebSocketHandshakeTimeout = *webSocketConf.HandshakeTimeout
+	}
+	if webSocketConf.ReadBufferSize != nil {
+		conf.WebSocketReadBufferSize = *webSocketConf.ReadBufferSize
+	}
+	if webSocketConf.WriteBufferSize != nil {
+		conf.WebSocketWriteBufferSize = *webSocketConf.WriteBufferSize
+	}
+
 	return &conf, nil
 }
 
@@ -113,7 +187,7 @@ func HandleCommand(args []string) (Command, *config.ConfigAtrs) {
 	}
 	switch command {
 	case "run", "Run":
-		conf, err := ExportConfig(args)
+		conf, err := exportConfig(args)
 		if err != nil {
 			return "", nil
 		} else {
@@ -122,7 +196,7 @@ func HandleCommand(args []string) (Command, *config.ConfigAtrs) {
 	case "-h", "--help", "help":
 		return Help, nil
 	case "migrate":
-		conf, err := ExportConfig(args)
+		conf, err := exportConfig(args)
 		if err != nil {
 			log.Fatal(err)
 		}
