@@ -4,10 +4,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type empity struct{}
-
-func Contact(e *echo.Echo) {
-	e.GET("/contact/:id", func(c echo.Context) error {
-		return c.JSON(200, empity{})
+func Contact(g *echo.Group) {
+	g.GET("/contact/:id", func(c echo.Context) error {
+		return c.JSON(200, nil)
 	})
 }

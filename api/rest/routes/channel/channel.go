@@ -4,11 +4,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type empity struct{}
+func Channel(g *echo.Group) {
+	g.GET("/channel/:id", func(c echo.Context) error {
 
-func Channel(e *echo.Echo) {
-	e.GET("/channel/:id", func(c echo.Context) error {
-
-		return c.JSON(200, empity{})
+		return c.JSON(200, nil)
 	})
 }

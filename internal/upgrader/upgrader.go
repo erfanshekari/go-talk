@@ -2,6 +2,7 @@ package upgrader
 
 import (
 	"log"
+	"net/http"
 	"sync"
 
 	"github.com/erfanshekari/go-talk/config"
@@ -27,6 +28,7 @@ func GetInstance(conf *config.Config) *Upgrader {
 					HandshakeTimeout: conf.Server.WebSocket.HandshakeTimeout,
 					ReadBufferSize:   conf.Server.WebSocket.ReadBufferSize,
 					WriteBufferSize:  conf.Server.WebSocket.WriteBufferSize,
+					CheckOrigin:      func(r *http.Request) bool { return true },
 				},
 			}
 		}

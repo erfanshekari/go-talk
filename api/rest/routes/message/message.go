@@ -5,15 +5,13 @@ import (
 
 	"github.com/erfanshekari/go-talk/api/rest/types"
 	"github.com/erfanshekari/go-talk/context"
-	"github.com/erfanshekari/go-talk/models"
 	"github.com/labstack/echo/v4"
 )
 
-func Message(e *echo.Echo) {
-	e.POST("/message", func(c echo.Context) error {
+func Message(g *echo.Group) {
+	g.POST("/message", func(c echo.Context) error {
 		cc := c.(*context.Context)
-		user := c.Get("user").(*models.User)
-		log.Println(user.GetDetails(cc))
+		log.Println(cc.Get("user"))
 		message := new(types.Message)
 		if err := c.Bind(message); err != nil {
 			log.Println("bind error:", err)

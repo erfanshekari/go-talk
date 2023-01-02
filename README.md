@@ -2,8 +2,6 @@
 Implemented in Go
 ~~~
 GoTalk Server
-/////////////.......................................................................................
-GoTalk Server
 Commands:
 =====> run                                       : Run GoTalk server
          *Options:

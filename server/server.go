@@ -7,9 +7,11 @@ import (
 
 	"github.com/erfanshekari/go-talk/config"
 	ctx "github.com/erfanshekari/go-talk/context"
+
 	"github.com/erfanshekari/go-talk/models"
 	"github.com/erfanshekari/go-talk/routes"
 	"github.com/erfanshekari/go-talk/test"
+
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -24,6 +26,12 @@ type Server struct {
 func (s *Server) registerRoutes(e *echo.Echo) {
 	for _, route := range routes.Routes {
 		route(e)
+	}
+}
+
+func (s *Server) registerProtectedRoutes(g *echo.Group) {
+	for _, route := range routes.ProtectedRoutes {
+		route(g)
 	}
 }
 
@@ -60,15 +68,20 @@ func (s *Server) Listen() {
 	// Adding Throttle Middleware
 	e.Use(middleware.RateLimiterWithConfig(ThrottleConfig))
 
+	// adding cors config
+	e.Use(middleware.CORSWithConfig(DefaultCORSConfig))
+
+	rest := e.Group("/rest")
+
 	// Adding jwt auth middleware
 	secretKey := os.Getenv("SECRET_KEY")
-	e.Use(echojwt.WithConfig(echojwt.Config{
+	rest.Use(echojwt.WithConfig(echojwt.Config{
 		SigningKey: []byte(secretKey),
 		ContextKey: "user",
 	}))
 
 	// Register user to context
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+	rest.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			cc := c.(*ctx.Context)
 			token := cc.Get("user").(*jwt.Token)
@@ -85,8 +98,11 @@ func (s *Server) Listen() {
 	// adding validator
 	e.Validator = GetValidator()
 
-	// registering all Rest API routes
+	// register routes
 	s.registerRoutes(e)
+
+	// register jwt protected routes
+	s.registerProtectedRoutes(rest)
 
 	// starting server
 	addr := s.Config.Server.Host + ":" + strconv.FormatInt(int64(s.Config.Server.Port), 10)

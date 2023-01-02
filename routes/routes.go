@@ -6,13 +6,17 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type RouteGroupRegistering func(e *echo.Echo)
+type RouteRegistering func(e *echo.Echo)
+
+type RouteGroupRegistering func(e *echo.Group)
 
 // All routes require JWT token in header
 
 var (
-	Routes []RouteGroupRegistering = []RouteGroupRegistering{
+	Routes []RouteRegistering = []RouteRegistering{
 		ws.WebSocketRoute, // ["/"]
-		message.Message,   // ["/message"]
+	}
+	ProtectedRoutes []RouteGroupRegistering = []RouteGroupRegistering{
+		message.Message, // ["/message"]
 	}
 )
