@@ -1,12 +1,12 @@
 package models
 
 import (
-	"github.com/erfanshekari/go-talk/config"
+	"github.com/erfanshekari/go-talk/internal/global"
 	"github.com/erfanshekari/go-talk/internal/mdbc"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetCollection(collectionName string, conf *config.Config) *mongo.Collection {
+func GetCollection(collectionName string) *mongo.Collection {
 	client := mdbc.GetInstance(nil).Client
-	return client.Database(conf.Database.Name).Collection(collectionName)
+	return client.Database(global.GetInstance(nil).Config.Database.Name).Collection(collectionName)
 }

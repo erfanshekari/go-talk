@@ -7,6 +7,7 @@ import (
 
 	"github.com/erfanshekari/go-talk/config"
 	"github.com/erfanshekari/go-talk/internal/cli"
+	"github.com/erfanshekari/go-talk/internal/global"
 	"github.com/erfanshekari/go-talk/internal/mdbc"
 	"github.com/erfanshekari/go-talk/internal/rdb"
 	"github.com/erfanshekari/go-talk/internal/upgrader"
@@ -25,6 +26,7 @@ func main() {
 	switch command {
 
 	case cli.RunServer:
+		initGlobalConfig(conf)
 		initRedis(conf)
 		defer rdb.GetInstance(nil).Close()
 		initMongoDB(conf)
@@ -37,6 +39,7 @@ func main() {
 
 	case cli.Migrate:
 		log.Println("Migrating Models...")
+		initGlobalConfig(conf)
 		conf.Server.Debug = true
 		conf.Server.LazyDebug = true
 		initMongoDB(conf)
@@ -71,4 +74,9 @@ func initMongoDB(conf *config.Config) {
 func initWebSocketUpgrader(conf *config.Config) {
 	// init gorilla websocket upgrader
 	upgrader.GetInstance(conf)
+}
+
+func initGlobalConfig(conf *config.Config) {
+	// init Config For Global Access
+	global.GetInstance(conf)
 }

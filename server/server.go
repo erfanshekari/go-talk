@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/erfanshekari/go-talk/config"
-	ctx "github.com/erfanshekari/go-talk/context"
 
 	"github.com/erfanshekari/go-talk/models"
 	"github.com/erfanshekari/go-talk/routes"
@@ -35,20 +34,32 @@ func (s *Server) registerProtectedRoutes(g *echo.Group) {
 	}
 }
 
+func (s *Server) registerAuthMiddlewares(g *echo.Group) {
+	// Adding jwt auth middleware
+	secretKey := os.Getenv("SECRET_KEY")
+	g.Use(echojwt.WithConfig(echojwt.Config{
+		SigningKey: []byte(secretKey),
+		ContextKey: "user",
+	}))
+
+	// Change jwt.Token to models.User
+	g.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			token := c.Get("user").(*jwt.Token)
+			claims := token.Claims.(jwt.MapClaims)
+			c.Set("user", &models.User{
+				UserID: strconv.FormatInt(
+					int64(int((claims["user_id"]).(float64))),
+					10,
+				)})
+			return next(c)
+		}
+	})
+}
+
 func (s *Server) Listen() {
 
 	e := echo.New() // init server
-
-	// Change Default Context
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			cc := &ctx.Context{
-				Context:      c,
-				ServerConfig: s.Config,
-			}
-			return next(cc)
-		}
-	})
 
 	// register echo logger and recover middleware
 	e.Use(middleware.Logger())
@@ -72,28 +83,7 @@ func (s *Server) Listen() {
 	e.Use(middleware.CORSWithConfig(DefaultCORSConfig))
 
 	rest := e.Group("/rest")
-
-	// Adding jwt auth middleware
-	secretKey := os.Getenv("SECRET_KEY")
-	rest.Use(echojwt.WithConfig(echojwt.Config{
-		SigningKey: []byte(secretKey),
-		ContextKey: "user",
-	}))
-
-	// Register user to context
-	rest.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			cc := c.(*ctx.Context)
-			token := cc.Get("user").(*jwt.Token)
-			claims := token.Claims.(jwt.MapClaims)
-			cc.Set("user", &models.User{
-				UserID: strconv.FormatInt(
-					int64(int((claims["user_id"]).(float64))),
-					10,
-				)})
-			return next(cc)
-		}
-	})
+	s.registerAuthMiddlewares(rest)
 
 	// adding validator
 	e.Validator = GetValidator()

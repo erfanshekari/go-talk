@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/erfanshekari/go-talk/config"
-	ctx "github.com/erfanshekari/go-talk/context"
+	// ctx "github.com/erfanshekari/go-talk/context"
 	"github.com/erfanshekari/go-talk/internal/mdbc"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -61,12 +61,12 @@ func MigrateUser(c context.Context, conf *config.Config) {
 	}
 }
 
-func (u *User) GetCollection(c *ctx.Context) *mongo.Collection {
-	return GetCollection(modelName, c.ServerConfig)
+func (u *User) GetCollection() *mongo.Collection {
+	return GetCollection(modelName)
 }
 
-func (u *User) newUser(userID string, c *ctx.Context) (*UserDetails, error) {
-	coll := u.GetCollection(c)
+func (u *User) newUser(userID string, c context.Context) (*UserDetails, error) {
+	coll := u.GetCollection()
 	details := UserDetails{
 		ID:       primitive.NewObjectID(),
 		UserID:   userID,
@@ -76,7 +76,7 @@ func (u *User) newUser(userID string, c *ctx.Context) (*UserDetails, error) {
 		Channels: []primitive.ObjectID{},
 	}
 	log.Println(details.LastSeen, details.LastSeen.T, details.LastSeen.I)
-	_, err := coll.InsertOne(c.Request().Context(), details)
+	_, err := coll.InsertOne(c, details)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -84,10 +84,10 @@ func (u *User) newUser(userID string, c *ctx.Context) (*UserDetails, error) {
 	return &details, nil
 }
 
-func (u *User) GetDetails(c *ctx.Context) *UserDetails {
+func (u *User) GetDetails(c context.Context) *UserDetails {
 	if u.Details == nil {
-		coll := u.GetCollection(c)
-		result := coll.FindOne(c.Request().Context(), bson.D{primitive.E{
+		coll := u.GetCollection()
+		result := coll.FindOne(c, bson.D{primitive.E{
 			Key:   "user_id",
 			Value: u.UserID,
 		}})

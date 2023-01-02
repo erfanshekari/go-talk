@@ -1,3 +1,5 @@
 #!/bin/bash
 
-cd test; npm run build
+cd test
+npm install
+npm run build

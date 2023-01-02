@@ -1,9 +1,9 @@
 package ws
 
 import (
-	"log"
 	"net/http"
 
+	"github.com/erfanshekari/go-talk/api/ws/handler"
 	"github.com/erfanshekari/go-talk/internal/upgrader"
 	"github.com/labstack/echo/v4"
 )
@@ -15,7 +15,7 @@ func WebSocketRoute(e *echo.Echo) {
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
-		log.Println(ws)
+		handler.HandleWebSocketConnection(ws)
 		return nil
 	})
 }

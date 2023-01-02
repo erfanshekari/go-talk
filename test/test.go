@@ -27,5 +27,5 @@ func RegisterTest(e *echo.Echo, lazy bool) {
 		}
 	}
 
-	e.Static("/test/", "test/build")
+	e.Static("/test", "test/build")
 }
