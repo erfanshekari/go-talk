@@ -1,6 +1,9 @@
 package global
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"log"
 	"sync"
 
 	"github.com/erfanshekari/go-talk/config"
@@ -9,7 +12,8 @@ import (
 var lock = &sync.Mutex{}
 
 type Global struct {
-	Config *config.Config
+	Config     *config.Config
+	PrivateKey *rsa.PrivateKey
 }
 
 var singleInstance *Global
@@ -19,8 +23,13 @@ func GetInstance(conf *config.Config) *Global {
 		lock.Lock()
 		defer lock.Unlock()
 		if singleInstance == nil {
+			privateKey, err := rsa.GenerateKey(rand.Reader, 2024)
+			if err != nil {
+				log.Fatal(err)
+			}
 			singleInstance = &Global{
-				Config: conf,
+				Config:     conf,
+				PrivateKey: privateKey,
 			}
 		}
 	}

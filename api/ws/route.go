@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/erfanshekari/go-talk/internal/upgrader"
@@ -24,8 +25,10 @@ func WebSocketRoute(e *echo.Echo) {
 		for {
 			err := w.HandleConnection()
 			if err != nil {
+				log.Println(err)
 				break
 			}
+
 		}
 
 		return nil
