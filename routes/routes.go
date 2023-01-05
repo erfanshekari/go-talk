@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/erfanshekari/go-talk/api/rest/routes/genkey"
 	"github.com/erfanshekari/go-talk/api/rest/routes/message"
 	"github.com/erfanshekari/go-talk/api/ws"
 	"github.com/labstack/echo/v4"
@@ -17,6 +18,7 @@ var (
 		ws.WebSocketRoute, // ["/"]
 	}
 	ProtectedRoutes []RouteGroupRegistering = []RouteGroupRegistering{
-		message.Message, // ["/message"]
+		message.Message, // ["/message"] Accept POST
+		genkey.GenKey,   // ["/genkey"] Accept POST
 	}
 )

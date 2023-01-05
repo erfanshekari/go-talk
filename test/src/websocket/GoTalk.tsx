@@ -29,14 +29,19 @@ type GTEvent = {
     content: string 
 }
 
+type BaseGoTalkConfig = {
+    ws: string
+    rest: string
+}
+
 class BaseGoTalk implements BaseGoTalkClient {
 
     state: BaseGoTalkState
     encrypt: JSEncrypt
     encryptKeys: RSAKeys
 
-    constructor(url:string) {
-        this.url = url
+    constructor(conf: BaseGoTalkConfig) {
+        this.conf = conf
         this.state = {
             closed: false,
             connected: false,
@@ -54,13 +59,13 @@ class BaseGoTalk implements BaseGoTalkClient {
     }
     
     private socket? : WebSocket
-    private url: string
+    private conf: BaseGoTalkConfig
 
     connect() {
         if (this.state.connected) return
         this.state.connecting = true
         if (!this.socket) {
-            this.socket = new WebSocket(this.url)
+            this.socket = new WebSocket(this.conf.ws)
             this.registerListeners()
         }
     }

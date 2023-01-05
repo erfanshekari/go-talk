@@ -13,13 +13,13 @@ func Message(g *echo.Group) {
 		message := new(types.Message)
 		if err := c.Bind(message); err != nil {
 			log.Println("bind error:", err)
-			return c.JSON(200, types.Empity{})
+			return c.JSON(200, nil)
 		}
 		if err := c.Validate(message); err != nil {
 			log.Println("err:", err)
-			return c.JSON(200, types.Empity{})
+			return c.JSON(200, nil)
 		}
 		log.Println(message)
-		return c.JSON(200, types.Empity{})
+		return c.JSON(200, nil)
 	})
 }
