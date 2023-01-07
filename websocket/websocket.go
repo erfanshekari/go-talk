@@ -71,9 +71,9 @@ func (w *WebSocket) Send(event []byte) error {
 			return err
 		}
 		if len(encryptedChunks) > 1 {
-			var chunks []string
+			var chunks [][]byte
 			for _, a := range encryptedChunks {
-				chunks = append(chunks, string(a))
+				chunks = append(chunks, a)
 			}
 			response := BytesWrappedJson{
 				Type:    ByteArray,
@@ -88,7 +88,7 @@ func (w *WebSocket) Send(event []byte) error {
 		} else {
 			response := BytesWrappedJson{
 				Type:    Byte,
-				Content: string(encryptedChunks[0]),
+				Content: encryptedChunks[0],
 			}
 			responseBytes, err := json.Marshal(response)
 			if err != nil {

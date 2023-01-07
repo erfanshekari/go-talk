@@ -2,8 +2,11 @@ import GoTalkTypes from "./types"
 import JSEncrypt from "jsencrypt";
 
 
+
 class GoTalkBase {
-    private _: JSEncrypt = new JSEncrypt() // ill test this later
+    private encrypt: JSEncrypt = new JSEncrypt({
+        log: true
+    }) // ill test this later
     private state: GoTalkTypes.State
     private config: GoTalkTypes.Config
     private socket?: WebSocket
@@ -100,7 +103,20 @@ class GoTalkBase {
     }
 
     private onMessageHandler(instance: GoTalkBase, event: MessageEvent<any>) {
-        console.log(event) 
+        const e: GoTalkTypes.Event = JSON.parse(event.data)
+        instance.encrypt.setPublicKey(instance.config.privateKey?.publicKey!)
+        instance.encrypt.setPrivateKey(instance.config.privateKey?.privateKey!)
+        switch(e.type) {
+            case GoTalkTypes.EventType.byte:
+                console.log(e.content)
+                break
+                case GoTalkTypes.EventType.byteArray:
+                    for (const val of e.content) {
+                        console.log(val)
+                        console.log(instance.encrypt.decrypt(val))
+                }
+                break
+        }
     }
 
     private onErrorHandler(instance: GoTalkBase, event: Event) {

@@ -3,16 +3,20 @@ package encypt
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"math"
 )
 
+const (
+	rsaKeySize = 4096
+)
+
 func GenerateKey() (*rsa.PrivateKey, error) {
-	return rsa.GenerateKey(rand.Reader, 4096)
+	return rsa.GenerateKey(rand.Reader, rsaKeySize)
 }
 
 func encrypt(i []byte, key *rsa.PublicKey) ([]byte, error) {
-	return rsa.EncryptOAEP(sha256.New(), rand.Reader, key, i, nil)
+	return rsa.EncryptPKCS1v15(rand.Reader, key, i)
+	// return rsa.EncryptOAEP(sha256.New(), rand.Reader, key, i, nil)
 }
 
 func encryptAddChunk(input []byte, key *rsa.PublicKey, chunks *[][]byte) error {
@@ -27,7 +31,7 @@ func encryptAddChunk(input []byte, key *rsa.PublicKey, chunks *[][]byte) error {
 func Encrypt(input []byte, key *rsa.PublicKey) ([][]byte, error) {
 	var chunks [][]byte
 	totalLen := len(input)
-	keySize := key.Size() - 66
+	keySize := key.Size() - 11
 	var encryptedLen int
 	if totalLen > keySize {
 		for i := 0; i < (int(math.Ceil(float64(totalLen)))); i++ {

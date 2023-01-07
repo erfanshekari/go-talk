@@ -7,23 +7,23 @@ import (
 )
 
 func ExportPubKeyAsPEMStr(pubkey *rsa.PublicKey) string {
-	pubKeyPem := string(pem.EncodeToMemory(
+	publicKeyPem := string(pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "RSA PUBLIC KEY",
 			Bytes: x509.MarshalPKCS1PublicKey(pubkey),
 		},
 	))
-	return pubKeyPem
+	return publicKeyPem
 }
 
 func ExportPrvKeyAsPEMStr(pubkey *rsa.PrivateKey) string {
-	pubKeyPem := string(pem.EncodeToMemory(
+	privateKeyPem := string(pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "RSA PRIVATE KEY",
 			Bytes: x509.MarshalPKCS1PrivateKey(pubkey),
 		},
 	))
-	return pubKeyPem
+	return privateKeyPem
 }
 
 func ParsePublicKey(pk string) (*rsa.PublicKey, error) {
