@@ -1,12 +1,12 @@
 package global
 
 import (
-	"crypto/rand"
 	"crypto/rsa"
 	"log"
 	"sync"
 
 	"github.com/erfanshekari/go-talk/config"
+	uencrypt "github.com/erfanshekari/go-talk/utils/encrypt"
 )
 
 var lock = &sync.Mutex{}
@@ -23,7 +23,7 @@ func GetInstance(conf *config.Config) *Global {
 		lock.Lock()
 		defer lock.Unlock()
 		if singleInstance == nil {
-			privateKey, err := rsa.GenerateKey(rand.Reader, 2024)
+			privateKey, err := uencrypt.GenerateKey()
 			if err != nil {
 				log.Fatal(err)
 			}

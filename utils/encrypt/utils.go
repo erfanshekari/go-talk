@@ -25,3 +25,17 @@ func ExportPrvKeyAsPEMStr(pubkey *rsa.PrivateKey) string {
 	))
 	return pubKeyPem
 }
+
+func ParsePublicKey(pk string) (*rsa.PublicKey, error) {
+	block, _ := pem.Decode([]byte(pk))
+	publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		pubkey, err := x509.ParsePKCS1PublicKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		return pubkey, nil
+	}
+	pubkey := publicKey.(*rsa.PublicKey)
+	return pubkey, nil
+}

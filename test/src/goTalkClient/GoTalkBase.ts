@@ -3,7 +3,7 @@ import JSEncrypt from "jsencrypt";
 
 
 class GoTalkBase {
-    private _: JSEncrypt = new JSEncrypt() // ill test this late
+    private _: JSEncrypt = new JSEncrypt() // ill test this later
     private state: GoTalkTypes.State
     private config: GoTalkTypes.Config
     private socket?: WebSocket
@@ -33,6 +33,7 @@ class GoTalkBase {
     private async resolvePrivateKey() {
         if (this.config.privateKey) {
             this.setState(state => ({...state, initialized: true}))
+            return
         }
         else {
         const controller = new AbortController();

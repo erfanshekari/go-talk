@@ -12,8 +12,13 @@ const ClientInner: FC<ClientInnerProps> = (props:ClientInnerProps) => {
 
     const [ state, setState ] = useState<GoTalkClientTypes.State>()
 
+    const handleStateChange = (state: GoTalkClientTypes.State) => {
+        console.log(state)
+        setState(state)
+    }
+
     useEffect(() => {
-        socket.setOnStateChangeFunction((state) => setState(state))
+        socket.setOnStateChangeFunction(handleStateChange)
     }, [props, socket])
 
     const [ message, setMessage ] = useState<string>()
@@ -31,9 +36,10 @@ const ClientInner: FC<ClientInnerProps> = (props:ClientInnerProps) => {
 
 
     return <>{state?.initialized ? <>
+        {state.connected ? "Connected" : "Not Connected"}<br/>
         <textarea value={message} onChange={e => setMessage(e.target.value)} /><br/>
-        <button onClick={connect}>connect</button><br/>
         <button onClick={send}>send</button><br/>
+        <button onClick={connect}>connect</button><br/>
         <button onClick={close}>close</button><br/>
     </> : <>initializing...</>}</>
 }
@@ -45,7 +51,7 @@ const Client: FC = () => {
         if (accessToken) {
             setSocket(new GoTalkClient({
                 rest: "http://localhost:8080/rest",
-                ws: "http://localhost:8080",
+                ws: "ws://localhost:8080",
                 accessToken: async () => `Bearer ${accessToken}`,
             }))
         }

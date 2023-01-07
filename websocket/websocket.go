@@ -1,45 +1,21 @@
 package websocket
 
 import (
-	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"errors"
 	"log"
 	"time"
 
 	"github.com/erfanshekari/go-talk/internal/global"
 	"github.com/erfanshekari/go-talk/models"
+	uencrypt "github.com/erfanshekari/go-talk/utils/encrypt"
 	ws "github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 )
 
 func getServerPublicKey() *rsa.PublicKey {
 	return &global.GetInstance(nil).PrivateKey.PublicKey
-}
-
-func exportPubKeyAsPEMStr(pubkey *rsa.PublicKey) string {
-	pubKeyPem := string(pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "RSA PUBLIC KEY",
-			Bytes: x509.MarshalPKCS1PublicKey(pubkey),
-		},
-	))
-	return pubKeyPem
-}
-
-func parseClientPublicKey(pk string) (*rsa.PublicKey, error) {
-	log.Println(pk)
-	block, _ := pem.Decode([]byte(pk))
-	publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-	pubkey := publicKey.(*rsa.PublicKey)
-	return pubkey, nil
 }
 
 type WebSocket struct {
@@ -60,13 +36,13 @@ type ServerPublicKeyEvent struct {
 type EventType string
 
 const (
-	PKX   EventType = "pkx"
-	Bytes EventType = "bytes"
+	Byte      EventType = "byte"
+	ByteArray EventType = "byteArray"
 )
 
 type BytesWrappedJson struct {
 	Type    EventType `json:"type"`
-	Content string    `json:"content"`
+	Content any       `json:"content"`
 }
 
 func NewConnection(con *ws.Conn, c echo.Context) *WebSocket {
@@ -88,38 +64,48 @@ func (w *WebSocket) StartRSAExchangeTimeout() {
 }
 
 func (w *WebSocket) Send(event []byte) error {
-	log.Println(string(event))
+	log.Println("len", len(event))
 	if w.PublicKey != nil {
-		encryptedBytes, err := rsa.EncryptOAEP(
-			sha256.New(),
-			rand.Reader,
-			w.PublicKey,
-			event,
-			nil)
+		encryptedChunks, err := uencrypt.Encrypt(event, w.PublicKey)
 		if err != nil {
 			return err
 		}
-		println(string(encryptedBytes))
-		event := BytesWrappedJson{
-			Type:    Bytes,
-			Content: string(encryptedBytes),
+		if len(encryptedChunks) > 1 {
+			var chunks []string
+			for _, a := range encryptedChunks {
+				chunks = append(chunks, string(a))
+			}
+			response := BytesWrappedJson{
+				Type:    ByteArray,
+				Content: chunks,
+			}
+			responseBytes, err := json.Marshal(response)
+			if err != nil {
+				return err
+			}
+			w.Connection.WriteMessage(1, responseBytes)
+			return nil
+		} else {
+			response := BytesWrappedJson{
+				Type:    Byte,
+				Content: string(encryptedChunks[0]),
+			}
+			responseBytes, err := json.Marshal(response)
+			if err != nil {
+				return err
+			}
+			w.Connection.WriteMessage(1, responseBytes)
+			return nil
 		}
-		eventAsBytes, err := json.Marshal(event)
-		if err != nil {
-			return err
-		}
-		w.Connection.WriteMessage(1, eventAsBytes)
 	} else {
 		return errors.New("PublicKey not exist")
 	}
-
-	return nil
 }
 
 func (w *WebSocket) HandleConnection() error {
 
-	_, msg, err := w.Connection.ReadMessage()
-	// log.Println(mt, string(msg))
+	mt, msg, err := w.Connection.ReadMessage()
+	log.Println(mt, string(msg))
 	if err != nil {
 		return err
 	}
@@ -130,20 +116,19 @@ func (w *WebSocket) HandleConnection() error {
 		if err != nil {
 			return err
 		}
-		pubkey, err := parseClientPublicKey(clientPublicKeyEvent.PublicKey)
-		log.Println(pubkey)
+		pubkey, err := uencrypt.ParsePublicKey(clientPublicKeyEvent.PublicKey)
 		if err != nil {
 			return err
 		}
 		w.PublicKey = pubkey
-		// serverPublicKeyEvent := ServerPublicKeyEvent{
-		// 	PublicKey: exportPubKeyAsPEMStr(getServerPublicKey()),
-		// }
-		// _, err := json.Marshal(serverPublicKeyEvent)
-		// if err != nil {
-		// 	return err
-		// }
-		err = w.Send([]byte("hello bitch"))
+		serverPublicKeyEvent := ServerPublicKeyEvent{
+			PublicKey: uencrypt.ExportPubKeyAsPEMStr(getServerPublicKey()),
+		}
+		response, err := json.Marshal(serverPublicKeyEvent)
+		if err != nil {
+			return err
+		}
+		err = w.Send(response)
 		if err != nil {
 			return err
 		}
