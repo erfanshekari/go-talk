@@ -1,8 +1,8 @@
-import React from 'react';
-import Client from './client/Client';
+import React, { FC } from 'react';
+import Client from './Client';
 
 
-function App() {
+const App:FC = () => {
   return (
     <div className="App">
       <h1>Client Test</h1>
