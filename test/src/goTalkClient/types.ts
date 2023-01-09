@@ -19,12 +19,12 @@ namespace GoTalkTypes {
         onStateChange?: (state: State) => void
     }
     export type SetState = (state: State) => State
-    export enum EventType {
+    export enum MessageType {
         byte = "byte",
         byteArray = "byteArray"
     }
-    export type Event = {
-        type: EventType
+    export type Message = {
+        type: MessageType
         content: string | string[]
     }
 }

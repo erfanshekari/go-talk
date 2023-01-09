@@ -1,12 +1,9 @@
 import GoTalkTypes from "./types"
-import JSEncrypt from "jsencrypt";
-
+import Encrypt from "./Encrypt";
 
 
 class GoTalkBase {
-    private encrypt: JSEncrypt = new JSEncrypt({
-        log: true
-    }) // ill test this later
+    private encrypt: Encrypt // ill test this later
     private state: GoTalkTypes.State
     private config: GoTalkTypes.Config
     private socket?: WebSocket
@@ -18,7 +15,12 @@ class GoTalkBase {
             connecting: false,
             initialized: false
         }
-        this.resolvePrivateKey()
+        this.encrypt = new Encrypt({
+            config: this.config,
+            onSuccess: () => {
+                this.setState(state => ({...state, initialized: true}))
+            }
+        })
     }
 
     setState(f:GoTalkTypes.SetState) {
@@ -31,35 +33,6 @@ class GoTalkBase {
     setOnStateChangeFunction(f:(state:GoTalkTypes.State) => void) {
         this.config.onStateChange = f
         f(this.state)
-    }
-
-    private async resolvePrivateKey() {
-        if (this.config.privateKey) {
-            this.setState(state => ({...state, initialized: true}))
-        }
-        else {
-            const controller = new AbortController();
-            const timeOut = setTimeout(() => controller.abort(), 3000);
-            const response = await fetch(
-                this.config.rest + "/genkey", 
-                {
-                    method: "POST", 
-                    headers: {
-                        "Authorization": (await this.config.accessToken())
-                    },
-                    
-            })
-            .catch(e => e.response)
-            clearTimeout(timeOut)
-            if (response.status === 200) {
-                this.config.privateKey = await response.json()
-                this.setState(state => ({...state, initialized: true}))
-            } else {
-                throw Error(`Can't get keys from api`)
-            }
-        }
-        this.encrypt.setPublicKey(this.config.privateKey?.publicKey!)
-        this.encrypt.setPrivateKey(this.config.privateKey?.privateKey!)
     }
 
     async connect() {
@@ -96,30 +69,39 @@ class GoTalkBase {
         }
     }
 
+    private async authenticate() {
+        let authPayload = this.encrypt.encrypt({ 
+            accessToken: (await this.config.accessToken())
+         })
+         if (authPayload) {
+            this.socket?.send(JSON.stringify(authPayload))
+         }
+    }
+
     private onOpenHandler(instance: GoTalkBase, event: Event) {
+        console.log(event)
         instance.socket?.send(JSON.stringify({
-            publicKey: this.config.privateKey?.publicKey
+            publicKey: this.encrypt.getPublicKey()
         }))
         this.setState(state => ({...state, connected: true, connecting: false}))
     }
 
     private onMessageHandler(instance: GoTalkBase, event: MessageEvent<any>) {
-        const e: GoTalkTypes.Event = JSON.parse(event.data)
-        switch(e.type) {
-            case GoTalkTypes.EventType.byte:
-                console.log(e.content)
-                break
-                case GoTalkTypes.EventType.byteArray:
-                    for (const val of e.content) {
-                        console.log(val)
-                        console.log(instance.encrypt.decrypt(val))
-                }
-                break
+        const e: GoTalkTypes.Message = JSON.parse(event.data)
+       let response = instance.encrypt.decrypt(e)
+       if (!instance.encrypt.exchangeIsDone()) {
+        if (response.publicKey) {
+            instance.encrypt.setServerPublicKey(response.publicKey)
+            instance.authenticate()
+        } else {
+            throw Error("Handshake Faield...")
         }
+       }
+       console.log(response)
     }
 
     private onErrorHandler(instance: GoTalkBase, event: Event) {
-        console.log(event, typeof event) 
+        console.log(event, typeof event)
     }
 
     private onCloseHandler(instance: GoTalkBase, event: CloseEvent) {

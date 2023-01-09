@@ -15,10 +15,11 @@ type Config struct {
 		Debug     bool   `yaml:"debug"`
 		LazyDebug bool   `yaml:"lazy-debug"`
 		WebSocket struct {
-			HandshakeTimeout   time.Duration `yaml:"handshake-timeout"`
-			ReadBufferSize     int           `yaml:"read-buffer-size"`
-			WriteBufferSize    int           `yaml:"write-buffer-size"`
-			RSAExchangeTimeout time.Duration `yaml:"rsa-exchange-timeout"`
+			HandshakeTimeout    time.Duration `yaml:"handshake-timeout"`
+			ReadBufferSize      int           `yaml:"read-buffer-size"`
+			WriteBufferSize     int           `yaml:"write-buffer-size"`
+			RSAExchangeTimeout  time.Duration `yaml:"rsa-exchange-timeout"`
+			AuthenticateTimeout time.Duration `yaml:"authenticate-timeout"`
 		} `yaml:"websocket"`
 	} `yaml:"server"`
 	Database struct {
