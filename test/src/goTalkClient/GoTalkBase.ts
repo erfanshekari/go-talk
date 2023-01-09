@@ -36,29 +36,30 @@ class GoTalkBase {
     private async resolvePrivateKey() {
         if (this.config.privateKey) {
             this.setState(state => ({...state, initialized: true}))
-            return
         }
         else {
-        const controller = new AbortController();
-        const timeOut = setTimeout(() => controller.abort(), 3000);
-        const response = await fetch(
-            this.config.rest + "/genkey", 
-            {
-                method: "POST", 
-                headers: {
-                    "Authorization": (await this.config.accessToken())
-                },
-                
-        })
-        .catch(e => e.response)
-        clearTimeout(timeOut)
-        if (response.status === 200) {
-            this.config.privateKey = await response.json()
-            this.setState(state => ({...state, initialized: true}))
-        } else {
-            throw Error(`Can't get keys from api`)
+            const controller = new AbortController();
+            const timeOut = setTimeout(() => controller.abort(), 3000);
+            const response = await fetch(
+                this.config.rest + "/genkey", 
+                {
+                    method: "POST", 
+                    headers: {
+                        "Authorization": (await this.config.accessToken())
+                    },
+                    
+            })
+            .catch(e => e.response)
+            clearTimeout(timeOut)
+            if (response.status === 200) {
+                this.config.privateKey = await response.json()
+                this.setState(state => ({...state, initialized: true}))
+            } else {
+                throw Error(`Can't get keys from api`)
+            }
         }
-        }
+        this.encrypt.setPublicKey(this.config.privateKey?.publicKey!)
+        this.encrypt.setPrivateKey(this.config.privateKey?.privateKey!)
     }
 
     async connect() {
@@ -104,8 +105,6 @@ class GoTalkBase {
 
     private onMessageHandler(instance: GoTalkBase, event: MessageEvent<any>) {
         const e: GoTalkTypes.Event = JSON.parse(event.data)
-        instance.encrypt.setPublicKey(instance.config.privateKey?.publicKey!)
-        instance.encrypt.setPrivateKey(instance.config.privateKey?.privateKey!)
         switch(e.type) {
             case GoTalkTypes.EventType.byte:
                 console.log(e.content)
