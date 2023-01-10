@@ -53,7 +53,7 @@ class EncryptBase {
                 {
                     method: "POST", 
                     headers: {
-                        "Authorization": (await conf.accessToken())
+                        "Authorization": ("Bearer " + (await conf.accessToken()))
                     },
                     
             })
@@ -91,7 +91,6 @@ class Encrypt extends EncryptBase implements EncryptInterface {
     encrypt(msg: object) {
         if (!this.isExchangeDone()) throw Error("You Can't encrypt before key exchange")
         let msgString = JSON.stringify(msg)
-        console.log(msgString)
         const msgLen = msgString.length
         const serverEncrypt = new JSEncrypt({ log: true })
         serverEncrypt.setPublicKey(this.serverPublicKey!)

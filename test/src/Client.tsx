@@ -52,7 +52,7 @@ const Client: FC = () => {
             setSocket(new GoTalkClient({
                 rest: "http://localhost:8080/rest",
                 ws: "ws://localhost:8080",
-                accessToken: async () => `Bearer ${accessToken}`,
+                accessToken: async () => `${accessToken}`,
             }))
         }
     }
@@ -63,7 +63,7 @@ const Client: FC = () => {
                 socket.close()
             }
         }
-    }, [])
+    }, [socket])
 
     return <>{socket ? <ClientInner socket={socket} /> : <>
     <input type="text" value={accessToken} onChange={e => setAccessToken(e.target.value)} /><br/>

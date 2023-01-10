@@ -2,15 +2,16 @@ package server
 
 import (
 	"log"
-	"os"
+	"net/http"
 	"strconv"
 
 	"github.com/erfanshekari/go-talk/config"
 
-	"github.com/erfanshekari/go-talk/models"
 	"github.com/erfanshekari/go-talk/routes"
 	"github.com/erfanshekari/go-talk/test"
 
+	"github.com/erfanshekari/go-talk/internal/global"
+	ujwt "github.com/erfanshekari/go-talk/utils/jwt"
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -36,9 +37,8 @@ func (s *Server) registerProtectedRoutes(g *echo.Group) {
 
 func (s *Server) registerAuthMiddlewares(g *echo.Group) {
 	// Adding jwt auth middleware
-	secretKey := os.Getenv("SECRET_KEY")
 	g.Use(echojwt.WithConfig(echojwt.Config{
-		SigningKey: []byte(secretKey),
+		SigningKey: []byte(global.GetInstance(nil).SecretKey),
 		ContextKey: "user",
 	}))
 
@@ -46,12 +46,11 @@ func (s *Server) registerAuthMiddlewares(g *echo.Group) {
 	g.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			token := c.Get("user").(*jwt.Token)
-			claims := token.Claims.(jwt.MapClaims)
-			c.Set("user", &models.User{
-				UserID: strconv.FormatInt(
-					int64(int((claims["user_id"]).(float64))),
-					10,
-				)})
+			user, err := ujwt.GetUserFromJWT(token)
+			if err != nil {
+				return c.JSON(http.StatusForbidden, nil)
+			}
+			c.Set("user", user)
 			return next(c)
 		}
 	})
@@ -96,5 +95,8 @@ func (s *Server) Listen() {
 
 	// starting server
 	addr := s.Config.Server.Host + ":" + strconv.FormatInt(int64(s.Config.Server.Port), 10)
-	e.Start(addr)
+	err := e.Start(addr)
+	if err != nil {
+		log.Println(err)
+	}
 }

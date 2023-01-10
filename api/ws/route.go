@@ -26,6 +26,10 @@ func WebSocketRoute(e *echo.Echo) {
 			err := w.HandleConnection()
 			if err != nil {
 				log.Println(err)
+				if !w.KeyExchanged() && w.Authenticated() {
+					w.Connection.Close()
+					return nil
+				}
 				break
 			}
 			log.Println("looping...")

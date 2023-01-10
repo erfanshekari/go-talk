@@ -4,15 +4,16 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/erfanshekari/go-talk/internal/global"
 	"github.com/erfanshekari/go-talk/models"
 	uencrypt "github.com/erfanshekari/go-talk/utils/encrypt"
+	ujwt "github.com/erfanshekari/go-talk/utils/jwt"
 	sevents "github.com/erfanshekari/go-talk/websocket/events"
 
-	// "github.com/golang-jwt/jwt/v4"
 	ws "github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 )
@@ -48,20 +49,27 @@ func (w *WebSocket) Authenticated() bool {
 }
 
 func (w *WebSocket) Authenticate(t sevents.ClientJWTToken) (*models.User, error) {
-
-	return nil, nil
+	token, err := ujwt.GetToken(t.AccessToken)
+	if err != nil {
+		return nil, err
+	}
+	user, err := ujwt.GetUserFromJWT(token)
+	if err != nil {
+		return nil, err
+	}
+	w.User = user
+	w.AuhthenticateTimer.Stop()
+	return w.User, nil
 }
 
 func (w *WebSocket) StartKeyExchangeTimeout() {
 	w.KeyExchangeTimer = time.AfterFunc(global.GetInstance(nil).Config.Server.WebSocket.RSAExchangeTimeout, func() {
-		log.Println("closing connection key exchange timeout")
 		w.Connection.Close()
 	})
 }
 
 func (w *WebSocket) StartAuthenticateTimeout() {
 	w.AuhthenticateTimer = time.AfterFunc(global.GetInstance(nil).Config.Server.WebSocket.AuthenticateTimeout, func() {
-		log.Println("closing connection Auth timeout")
 		w.Connection.Close()
 	})
 }
@@ -88,10 +96,21 @@ func (w *WebSocket) Send(event []byte) error {
 func (w *WebSocket) HandleConnection() error {
 
 	mt, msg, err := w.Connection.ReadMessage()
-	log.Println(string(msg))
-	log.Println("Message Type:", mt)
 	if err != nil {
 		return err
+	}
+	log.Println(mt, string(msg))
+	switch mt {
+	case ws.TextMessage:
+		log.Println("message type is safe")
+		break
+	default:
+		log.Println("Unhandler message type we sould close connection")
+		return errors.New(fmt.Sprintf("Can't Handle MessageType: %d", mt))
+	}
+
+	if w.KeyExchanged() && w.Authenticated() {
+		log.Println("Lets handle commiunication somewhere else...")
 	}
 
 	if !w.KeyExchanged() {
@@ -131,11 +150,14 @@ func (w *WebSocket) HandleConnection() error {
 		}
 		user, err := w.Authenticate(token)
 		if err != nil {
-			w.Connection.Close()
-			return nil
+			return w.Connection.Close()
 		}
-		log.Println(user)
-		return nil
+		userACK := sevents.ServerUserACK{UserID: user.UserID}
+		userACKByte, err := json.Marshal(userACK)
+		if err != nil {
+			return err
+		}
+		return w.Send(userACKByte)
 	}
 
 	return nil
