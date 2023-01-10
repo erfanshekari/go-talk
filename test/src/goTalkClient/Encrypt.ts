@@ -7,6 +7,7 @@ const keySize = 501
 type EncryptInput = {
     config: GoTalkTypes.Config
     onSuccess: () => void
+    isExchangeDone: () => boolean
 }
 
 class EncryptBase {
@@ -15,14 +16,19 @@ class EncryptBase {
         log: true
     })
 
+    jsEncryptServer: JSEncrypt = new JSEncrypt({
+        log: true
+    })
+
     privateKey?: GoTalkTypes.PrivateKey
+
+    isExchangeDone: () => boolean
     
     private OnSuccessFunc: () => void
 
-    serverPublicKey?: string
-
     constructor(input:EncryptInput) {
         this.OnSuccessFunc = input.onSuccess
+        this.isExchangeDone = input.isExchangeDone
         if (input.config.privateKey) {
             this.setKeysFromConfig(input.config)
         } else {
@@ -71,27 +77,22 @@ interface EncryptInterface {
     decrypt: (msg: GoTalkTypes.Message) => object
     setServerPublicKey: (key: string) => void
     getPublicKey: () => string
-    exchangeIsDone: () => boolean
 }
 
 class Encrypt extends EncryptBase implements EncryptInterface {
     setServerPublicKey(key: string) {
-        this.serverPublicKey = key
+        this.jsEncryptServer.setPublicKey(key)
     }
 
     getPublicKey() {
         return this.privateKey?.publicKey || ""
     }
 
-    exchangeIsDone() {
-        return Boolean(this.serverPublicKey)
-    }
 
     encrypt(msg: object) {
-        if (!this.exchangeIsDone()) throw Error("You Can't encrypt before key exchange")
+        if (!this.isExchangeDone()) throw Error("You Can't encrypt before key exchange")
         let msgString = JSON.stringify(msg)
-        const encrypt = new JSEncrypt()
-        encrypt.setPublicKey(this.serverPublicKey!)
+        console.log(msgString)
         const msgLen = msgString.length
         if (msgLen > keySize) {
             var encryptedLen = 0
@@ -100,7 +101,7 @@ class Encrypt extends EncryptBase implements EncryptInterface {
                 if ((encryptedLen + keySize) > msgLen) {
                     // last part smaller then max size
                     let target = msgString.slice(encryptedLen, (msgLen - encryptedLen))
-                    let encrypted = encrypt.encrypt(target)
+                    let encrypted = this.jsEncryptServer.encrypt(target)
                     if (encrypted) {
                         encryptedArray = [...encryptedArray, encrypted]
                     } else {
@@ -110,7 +111,7 @@ class Encrypt extends EncryptBase implements EncryptInterface {
                 } else if (i === 0) {
                     // first part
                     let target = msgString.slice(0, keySize)
-                    let encrypted = encrypt.encrypt(target)
+                    let encrypted = this.jsEncryptServer.encrypt(target)
                     if (encrypted) {
                         encryptedArray = [...encryptedArray, encrypted]
                     } else {
@@ -120,7 +121,7 @@ class Encrypt extends EncryptBase implements EncryptInterface {
                     continue
                 }
                 let target = msgString.slice(encryptedLen, (encryptedLen + keySize))
-                let encrypted = encrypt.encrypt(target)
+                let encrypted = this.jsEncryptServer.encrypt(target)
                 if (encrypted) {
                     encryptedArray = [...encryptedArray, encrypted]
                 } else {
@@ -133,7 +134,7 @@ class Encrypt extends EncryptBase implements EncryptInterface {
                 content: encryptedArray
             } as GoTalkTypes.Message
         } else {
-            let encrypted = encrypt.encrypt(msgString)
+            let encrypted = this.jsEncryptServer.encrypt(msgString)
             if (encrypted) {
                 return {
                     type: "byte",

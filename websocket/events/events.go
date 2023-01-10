@@ -8,6 +8,6 @@ const (
 )
 
 type BytesWrappedJson struct {
-	Type    BytesWrappedJsonType `json:"type"`
-	Content any                  `json:"content"`
+	Type    BytesWrappedJsonType `json:"type" bson:"type"`
+	Content any                  `json:"content" bson:"content"`
 }

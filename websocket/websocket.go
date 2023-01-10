@@ -20,35 +20,38 @@ func getServerPublicKey() *rsa.PublicKey {
 }
 
 type WebSocket struct {
-	Connection *ws.Conn
-	Context    echo.Context
-	User       *models.User
-	PublicKey  *rsa.PublicKey
+	Connection         *ws.Conn
+	Context            echo.Context
+	User               *models.User
+	PublicKey          *rsa.PublicKey
+	KeyExchangeTimer   *time.Timer
+	AuhthenticateTimer *time.Timer
 }
 
 func NewConnection(con *ws.Conn, c echo.Context) *WebSocket {
-	ws := WebSocket{
+	w := WebSocket{
 		Connection: con,
 		Context:    c,
 	}
+	w.StartKeyExchangeTimeout()
 
-	go ws.StartRSAExchangeTimeout()
-
-	return &ws
+	return &w
 }
 
-func (w *WebSocket) StartRSAExchangeTimeout() {
-	time.Sleep(global.GetInstance(nil).Config.Server.WebSocket.RSAExchangeTimeout)
-	if w.PublicKey == nil {
+func (w *WebSocket) StartKeyExchangeTimeout() {
+	w.KeyExchangeTimer = time.AfterFunc(global.GetInstance(nil).Config.Server.WebSocket.RSAExchangeTimeout, func() {
+		log.Println("closing connection key exchange timeout")
 		w.Connection.Close()
-	}
+	})
+	log.Println("end of StartKeyExchangeTimeout function")
 }
 
 func (w *WebSocket) StartAuthenticateTimeout() {
-	time.Sleep(global.GetInstance(nil).Config.Server.WebSocket.AuthenticateTimeout)
-	if w.User == nil {
+	w.AuhthenticateTimer = time.AfterFunc(global.GetInstance(nil).Config.Server.WebSocket.AuthenticateTimeout, func() {
+		log.Println("closing connection Auth timeout")
 		w.Connection.Close()
-	}
+	})
+	log.Println("end of StartAuthenticateTimeout function")
 }
 
 func (w *WebSocket) Send(event []byte) error {
@@ -81,7 +84,10 @@ func (w *WebSocket) Send(event []byte) error {
 			if err != nil {
 				return err
 			}
-			w.Connection.WriteMessage(1, responseBytes)
+			err = w.Connection.WriteMessage(1, responseBytes)
+			if err != nil {
+				return err
+			}
 			return nil
 		}
 	} else {
@@ -92,10 +98,18 @@ func (w *WebSocket) Send(event []byte) error {
 func (w *WebSocket) HandleConnection() error {
 
 	mt, msg, err := w.Connection.ReadMessage()
-	log.Println(mt, string(msg))
+	log.Println(string(msg))
+	log.Println("Message Type:", mt)
 	if err != nil {
 		return err
 	}
+
+	// switch mt {
+	// case ws.MsgTypeBinary:
+	// 	log.Println("message is MsgTypeBinary")
+	// case ws.MsgTypeText:
+	// 	log.Println("message is MsgTypeText")
+	// }
 
 	if w.PublicKey == nil {
 		var clientPublicKey sevents.ClientPublicKey
@@ -119,15 +133,18 @@ func (w *WebSocket) HandleConnection() error {
 		if err != nil {
 			return err
 		}
+		w.KeyExchangeTimer.Stop()
 		w.StartAuthenticateTimeout()
 		return nil
 	} else if w.User == nil {
-		var response sevents.BytesWrappedJsonType
+		log.Println("auth block")
+		var response sevents.BytesWrappedJson
 		err := json.Unmarshal(msg, &response)
 		if err != nil {
 			return err
 		}
 		log.Println(response)
+		return nil
 	}
 
 	return nil

@@ -28,7 +28,7 @@ func WebSocketRoute(e *echo.Echo) {
 				log.Println(err)
 				break
 			}
-
+			log.Println("looping...")
 		}
 
 		return nil

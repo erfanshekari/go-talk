@@ -6,6 +6,8 @@ namespace GoTalkTypes {
         connecting: boolean
         closed: boolean
         initialized: boolean
+        isKeyExchangeDone: boolean
+        authenticated: boolean
     }
     export type PrivateKey = {
         publicKey: string
@@ -24,7 +26,7 @@ namespace GoTalkTypes {
         byteArray = "byteArray"
     }
     export type Message = {
-        type: MessageType
+        _type: MessageType
         content: string | string[]
     }
 }

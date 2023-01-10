@@ -7,8 +7,8 @@ server:
     handshake-timeout: 3s
     read-buffer-size: 1024
     write-buffer-size: 1024
-    rsa-exchange-timeout: 3s
-    authenticate-timeout: 3s
+    rsa-exchange-timeout: 5s
+    authenticate-timeout: 5s
 
 database:
   name: "go-talk"

@@ -16,7 +16,6 @@ func GenerateKey() (*rsa.PrivateKey, error) {
 
 func encrypt(i []byte, key *rsa.PublicKey) ([]byte, error) {
 	return rsa.EncryptPKCS1v15(rand.Reader, key, i)
-	// return rsa.EncryptOAEP(sha256.New(), rand.Reader, key, i, nil)
 }
 
 func encryptAddChunk(input []byte, key *rsa.PublicKey, chunks *[][]byte) error {

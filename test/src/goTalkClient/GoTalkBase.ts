@@ -13,13 +13,16 @@ class GoTalkBase {
             closed: false,
             connected: false,
             connecting: false,
-            initialized: false
+            initialized: false,
+            isKeyExchangeDone: false,
+            authenticated: false
         }
         this.encrypt = new Encrypt({
             config: this.config,
             onSuccess: () => {
                 this.setState(state => ({...state, initialized: true}))
-            }
+            },
+            isExchangeDone: () => this.state.isKeyExchangeDone
         })
     }
 
@@ -70,18 +73,22 @@ class GoTalkBase {
     }
 
     private async authenticate() {
-        let authPayload = this.encrypt.encrypt({ 
+        console.log("authenticate func")
+        let authToken = { 
             accessToken: (await this.config.accessToken())
-         })
-         if (authPayload) {
-            this.socket?.send(JSON.stringify(authPayload))
+         }
+        let authJsonBinaryPayload = this.encrypt.encrypt(authToken)
+        console.log(authJsonBinaryPayload)
+         if (authJsonBinaryPayload) {
+            let l = JSON.stringify(authJsonBinaryPayload)
+            console.log(l)
+            this.socket?.send(l)
          }
     }
 
     private onOpenHandler(instance: GoTalkBase, event: Event) {
-        console.log(event)
         instance.socket?.send(JSON.stringify({
-            publicKey: this.encrypt.getPublicKey()
+            publicKey: instance.encrypt.getPublicKey()
         }))
         this.setState(state => ({...state, connected: true, connecting: false}))
     }
@@ -89,15 +96,20 @@ class GoTalkBase {
     private onMessageHandler(instance: GoTalkBase, event: MessageEvent<any>) {
         const e: GoTalkTypes.Message = JSON.parse(event.data)
        let response = instance.encrypt.decrypt(e)
-       if (!instance.encrypt.exchangeIsDone()) {
-        if (response.publicKey) {
-            instance.encrypt.setServerPublicKey(response.publicKey)
-            instance.authenticate()
-        } else {
-            throw Error("Handshake Faield...")
-        }
-       }
        console.log(response)
+       if (!instance.encrypt.isExchangeDone()) {
+        if (response.publicKey) {
+            console.log(response)
+            instance.encrypt.setServerPublicKey(response.publicKey)
+            instance.setState(state => ({...state, isKeyExchangeDone: true}))
+            instance.authenticate()
+            return
+        } else {
+            throw Error("RSA Key Exchange Faield...")
+        }
+       } else if (!instance.state.authenticated) {
+        // key exchanged lets authenticate
+       }
     }
 
     private onErrorHandler(instance: GoTalkBase, event: Event) {
