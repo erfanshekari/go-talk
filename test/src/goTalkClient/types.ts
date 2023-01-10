@@ -26,7 +26,7 @@ namespace GoTalkTypes {
         byteArray = "byteArray"
     }
     export type Message = {
-        _type: MessageType
+        type: MessageType
         content: string | string[]
     }
 }

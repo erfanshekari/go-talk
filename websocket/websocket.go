@@ -11,12 +11,23 @@ import (
 	"github.com/erfanshekari/go-talk/models"
 	uencrypt "github.com/erfanshekari/go-talk/utils/encrypt"
 	sevents "github.com/erfanshekari/go-talk/websocket/events"
+
+	// "github.com/golang-jwt/jwt/v4"
 	ws "github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 )
 
 func getServerPublicKey() *rsa.PublicKey {
 	return &global.GetInstance(nil).PrivateKey.PublicKey
+}
+func NewConnection(con *ws.Conn, c echo.Context) *WebSocket {
+	w := WebSocket{
+		Connection: con,
+		Context:    c,
+	}
+	w.StartKeyExchangeTimeout()
+
+	return &w
 }
 
 type WebSocket struct {
@@ -28,14 +39,17 @@ type WebSocket struct {
 	AuhthenticateTimer *time.Timer
 }
 
-func NewConnection(con *ws.Conn, c echo.Context) *WebSocket {
-	w := WebSocket{
-		Connection: con,
-		Context:    c,
-	}
-	w.StartKeyExchangeTimeout()
+func (w *WebSocket) KeyExchanged() bool {
+	return w.PublicKey != nil
+}
 
-	return &w
+func (w *WebSocket) Authenticated() bool {
+	return w.User != nil
+}
+
+func (w *WebSocket) Authenticate(t sevents.ClientJWTToken) (*models.User, error) {
+
+	return nil, nil
 }
 
 func (w *WebSocket) StartKeyExchangeTimeout() {
@@ -43,7 +57,6 @@ func (w *WebSocket) StartKeyExchangeTimeout() {
 		log.Println("closing connection key exchange timeout")
 		w.Connection.Close()
 	})
-	log.Println("end of StartKeyExchangeTimeout function")
 }
 
 func (w *WebSocket) StartAuthenticateTimeout() {
@@ -51,48 +64,25 @@ func (w *WebSocket) StartAuthenticateTimeout() {
 		log.Println("closing connection Auth timeout")
 		w.Connection.Close()
 	})
-	log.Println("end of StartAuthenticateTimeout function")
 }
 
 func (w *WebSocket) Send(event []byte) error {
-	if w.PublicKey != nil {
-		encryptedChunks, err := uencrypt.Encrypt(event, w.PublicKey)
+	if w.KeyExchanged() {
+		encryptedJson, err := uencrypt.Encrypt(event, w.PublicKey)
 		if err != nil {
 			return err
 		}
-		if len(encryptedChunks) > 1 {
-			var chunks [][]byte
-			for _, a := range encryptedChunks {
-				chunks = append(chunks, a)
-			}
-			response := sevents.BytesWrappedJson{
-				Type:    sevents.ByteArray,
-				Content: chunks,
-			}
-			responseBytes, err := json.Marshal(response)
-			if err != nil {
-				return err
-			}
-			w.Connection.WriteMessage(1, responseBytes)
-			return nil
-		} else {
-			response := sevents.BytesWrappedJson{
-				Type:    sevents.Byte,
-				Content: encryptedChunks[0],
-			}
-			responseBytes, err := json.Marshal(response)
-			if err != nil {
-				return err
-			}
-			err = w.Connection.WriteMessage(1, responseBytes)
-			if err != nil {
-				return err
-			}
-			return nil
+		responseBytes, err := json.Marshal(encryptedJson)
+		if err != nil {
+			return err
 		}
-	} else {
-		return errors.New("PublicKey not exist")
+		err = w.Connection.WriteMessage(ws.TextMessage, responseBytes)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
+	return errors.New("Can't send data before key exchange...")
 }
 
 func (w *WebSocket) HandleConnection() error {
@@ -104,14 +94,7 @@ func (w *WebSocket) HandleConnection() error {
 		return err
 	}
 
-	// switch mt {
-	// case ws.MsgTypeBinary:
-	// 	log.Println("message is MsgTypeBinary")
-	// case ws.MsgTypeText:
-	// 	log.Println("message is MsgTypeText")
-	// }
-
-	if w.PublicKey == nil {
+	if !w.KeyExchanged() {
 		var clientPublicKey sevents.ClientPublicKey
 		err := json.Unmarshal(msg, &clientPublicKey)
 		if err != nil {
@@ -136,14 +119,22 @@ func (w *WebSocket) HandleConnection() error {
 		w.KeyExchangeTimer.Stop()
 		w.StartAuthenticateTimeout()
 		return nil
-	} else if w.User == nil {
-		log.Println("auth block")
-		var response sevents.BytesWrappedJson
-		err := json.Unmarshal(msg, &response)
+	} else if !w.Authenticated() {
+		authMsg, err := uencrypt.Decrypt(msg, global.GetInstance(nil).PrivateKey)
 		if err != nil {
 			return err
 		}
-		log.Println(response)
+		var token sevents.ClientJWTToken
+		err = json.Unmarshal(*authMsg, &token)
+		if err != nil {
+			return err
+		}
+		user, err := w.Authenticate(token)
+		if err != nil {
+			w.Connection.Close()
+			return nil
+		}
+		log.Println(user)
 		return nil
 	}
 

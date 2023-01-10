@@ -17,12 +17,13 @@ class GoTalkBase {
             isKeyExchangeDone: false,
             authenticated: false
         }
+        let instance = this
         this.encrypt = new Encrypt({
             config: this.config,
             onSuccess: () => {
-                this.setState(state => ({...state, initialized: true}))
+                instance.setState(state => ({...state, initialized: true}))
             },
-            isExchangeDone: () => this.state.isKeyExchangeDone
+            isExchangeDone: () => instance.state.isKeyExchangeDone
         })
     }
 
